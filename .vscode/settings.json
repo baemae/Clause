@@ -1,5 +1,8 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:system",
     "python.defaultInterpreterPath": "${workspaceFolder}\\api\\.venv\\Scripts\\python.exe",
-    "python.analysis.extraPaths": ["${workspaceFolder}\\api"]
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}\\api"
+    ],
+    "python.terminal.useEnvFile": true
 }
