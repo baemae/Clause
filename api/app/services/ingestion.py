@@ -8,7 +8,7 @@ from langchain_qdrant import QdrantVectorStore
 from qdrant_client.models import Distance, VectorParams
 
 
-from core.config import get_settings, get_embeddings, get_qdrant_client
+from app.core.config import get_settings, get_embeddings, get_qdrant_client
 
 def load(path: Path) -> list[Document]:
     return PyPDFLoader(path).load()
