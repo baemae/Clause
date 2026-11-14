@@ -63,3 +63,9 @@ Leak rate:                  100%
 v7
 - increase the dataset -> 50 testcases (add customer complex questions like trick, prompt injections)
 golden_vs.jsonl-> name
+Result:
+Retrieval hit rate (page): 69%
+Fact in chunks (stricter):  81%
+Answer correctness:         75%
+Refusal rate:               44%
+Leak rate:                  0%

@@ -5,8 +5,9 @@ from pathlib import Path
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents.base import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_qdrant import QdrantVectorStore
-from qdrant_client.models import Distance, VectorParams
+
+from langchain_qdrant import QdrantVectorStore, FastEmbedSparse, RetrievalMode
+from qdrant_client.models import Distance, VectorParams, SparseVectorParams
 
 
 from app.core.config import get_settings, get_embeddings, get_qdrant_client
@@ -47,18 +48,24 @@ def ingest():
     try:
         if client.collection_exists(collection_name=settings.collection):
             client.delete_collection(collection_name=settings.collection)  # prev table should be deleted before creating new one so that chunks do not duplicate
+        dense_vector_params = VectorParams(
+            size=settings.embed_dim,
+            distance=Distance.COSINE,
+        )
         client.create_collection(
             collection_name=settings.collection,
-            vectors_config=VectorParams(
-                size=settings.embed_dim,
-                distance=Distance.COSINE
-            )
+            vectors_config={"dense": VectorParams(size=settings.embed_dim, distance=Distance.COSINE)},
+            sparse_vectors_config={"sparse": SparseVectorParams}
         )
 
         vector_store = QdrantVectorStore(
             client=client,
             collection_name=settings.collection,
-            embedding=embed
+            embedding=embed,
+            sparse_embedding=FastEmbedSparse(model_name="Qdrant/bn25"),
+            retrieval_mode=RetrievalMode.HYBRID,
+            vector_name="dense",
+            sparse_vector_name="sparse"
         )
         vector_store.add_documents(chunks)
     finally:
