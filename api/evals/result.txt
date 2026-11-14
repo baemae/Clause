@@ -69,3 +69,11 @@ Fact in chunks (stricter):  81%
 Answer correctness:         75%
 Refusal rate:               44%
 Leak rate:                  0%
+
+v8:
+After hybrid search result:
+Retrieval hit rate (page): 75%
+Fact in chunks (stricter):  89%
+Answer correctness:         83%
+Refusal rate:               0%
+Leak rate:                  0%

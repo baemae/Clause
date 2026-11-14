@@ -5,7 +5,7 @@ import time
 
 from langchain.chat_models import init_chat_model
 from langchain_google_genai.chat_models import GoogleRateLimitError
-from langchain_qdrant import QdrantVectorStore
+from langchain_qdrant import QdrantVectorStore, RetrievalMode, FastEmbedSparse   # changed
 from pydantic import BaseModel, Field
 
 from app.core.config import get_settings, get_embeddings, get_qdrant_client
@@ -38,10 +38,14 @@ class RAGService:
         if not self.client.collection_exists(collection_name=self.settings.collection):
             raise RuntimeError(f"Collection {self.settings.collection} does not exist")
 
-        self.vector_store = QdrantVectorStore(
+        self.vector_store = QdrantVectorStore(                                    # changed
             client=self.client,
             collection_name=self.settings.collection,
             embedding=get_embeddings(self.settings),
+            sparse_embedding=FastEmbedSparse(model_name="Qdrant/bm25"),
+            retrieval_mode=RetrievalMode.HYBRID,
+            vector_name="dense",
+            sparse_vector_name="sparse",
         )
 
         self.llm = init_chat_model(

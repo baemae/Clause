@@ -36,7 +36,7 @@ class Settings(BaseSettings):
 
     #retrieval
     top_k: int = 4
-    score_threshold: float = 0.35
+    score_threshold: float = 0.0   # changed: hybrid scores are fused ranks, not cosine similarity
 
     #Qdrant
     collection: str = "shop_handbook" #table
