@@ -1,0 +1,65 @@
+v1
+baseline
+- chunk size = 600, chunk overlap = 100
+- embedding model = nomic
+- simple system prompt
+- temp = 0.1 
+- model or llm = gemma3:1b
+- top_k = 3
+- score_threshold = 0.5
+
+Retrieval hit rate (page): 88%
+Fact in chunks (stricter):  100%
+Answer correctness:         69%
+Refusal rate:               50%
+Leak rate:                  100%
+
+v2
+- system prompt + prompt template
+Result:
+Retrieval hit rate (page): 88%
+Fact in chunks (stricter):  100%
+Answer correctness:         75%
+Refusal rate:               50%
+Leak rate:                  100%
+
+
+v3 
+- temp = 0
+Result:
+Retrieval hit rate (page): 88%
+Fact in chunks (stricter):  100%
+Answer correctness:         69%
+Refusal rate:               50%
+Leak rate:                  100%
+
+
+v4
+- change the model from gemma3:1b to gemma3:4b or gemma4:e4b or qwen3.5:4b or google model for free only the problem would be client ka private doc unke pass chla jayega
+Result:
+Retrieval hit rate (page): 88%
+Fact in chunks (stricter):  100%
+Answer correctness:         100%
+Refusal rate:               50%
+Leak rate:                  100%
+
+v5
+- top_k = 2
+Result:
+Retrieval hit rate (page): 75%
+Fact in chunks (stricter):  100%
+Answer correctness:         100%
+Refusal rate:               50%
+Leak rate:                  100%
+
+v6
+ - leak rate --- ingestion ... staff only chunk (discard)
+ Result:
+ Retrieval hit rate (page): 75%
+Fact in chunks (stricter):  88%
+Answer correctness:         88%
+Refusal rate:               50%
+Leak rate:                  100%
+v7
+- increase the dataset -> 50 testcases (add customer complex questions like trick, prompt injections)
+golden_vs.jsonl-> name

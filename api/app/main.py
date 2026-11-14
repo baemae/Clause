@@ -1,6 +1,7 @@
 # will make an API here
 #Web APIs --> web API+ AI --> AI APIs or RAG APIs or Clause APIs
 # combo of 2 things pydantic -> handles data parts and starlette -> handles web parts
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +10,7 @@ from pydantic import BaseModel, StringConstraints
 
 from app.services.chat import RAGService, Answer
 @asynccontextmanager
-async def Lifespan(app: FastAPI) -> None: #tells FastAPI how to start and stop the app
+async def Lifespan(app: FastAPI) -> AsyncGenerator[None, None]: #tells FastAPI how to start and stop the app
     app.state.rag = RAGService()
     yield
     app.state.rag.close()
