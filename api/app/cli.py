@@ -1,4 +1,4 @@
-from app.services.ingestion import ingest
+#from app.services.ingestion import ingest
 from app.services.chat import RAGService
 
 

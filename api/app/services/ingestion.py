@@ -55,3 +55,6 @@ def ingest():
         client.close()
 
     return len(chunks)
+
+if __name__ == "__main__":
+        print(ingest(), "chunks indexed")
