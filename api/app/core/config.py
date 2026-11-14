@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     #app
     app_name: str = "Clause Shop Assistant"
-    data_path: Path = Path("data/shop_handbook.pdf")
+    data_path: Path = Path("files/shop_handbook.pdf")
 
     #chat
     chat_model: str = "gemma3:1b"
@@ -36,10 +36,11 @@ class Settings(BaseSettings):
 
     #retrieval
     top_k: int = 3
-
+    score_threshold: float = 0.5
+    
     #Qdrant
     collection: str = "shop_handbook" #table
-    qdrant_data: str = "./qdrant_data" #vector store
+    qdrant_data: str = "./vector_stores" #vector store
 
     #prompt
     system_prompt: str = (

@@ -50,11 +50,11 @@ class RAGService:
         if not question:
             raise ValueError("Question cannot be empty")
 
-        results = [
-    (doc, score)
-    for doc, score in self.vector_store.similarity_search_with_score(question, k=4)
-    if score >= 0.35  # tune this by printing scores for good and bad questions
-]
+        results = self.vector_store.similarity_search_with_score(
+            query=question,
+            k=self.settings.top_k,
+            score_threshold=self.settings.score_threshold,
+        )
 
         if not results:
             return Answer(answer=NO_ANSWER, sources=[]) #saves token
