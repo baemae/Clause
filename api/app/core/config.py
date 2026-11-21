@@ -45,6 +45,14 @@ class Settings(BaseSettings):
     #prompt
     system_prompt_version: str = "v1"
 
+    #agent Limit (per question)
+    max_model_call: int = 5
+    max_tool_call: int = 3
+
+    #Memory: Summarize old messages when conversation gets long
+    summary_trigger_tokens: int = 3000
+    summary_keep_messages: int = 10 #this will keep the last 10 msgs and summarize the  other ones
+
 
 @lru_cache
 def get_settings():

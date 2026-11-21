@@ -19,6 +19,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.store.memory import InMemoryStore
 from app.tools.knowledge.handbook import file_search
 
+from app.middleware.stacks import default_stack
 conn = sqlite3.connect(database="memory.db", check_same_thread=False)
 checkpointer= SqliteSaver(conn)
 
@@ -97,7 +98,7 @@ class ClauseAgent:
                 file_search(vector_store=self.vector_store, top_k=self.settings.top_k),
                 save_memory,
                 ],
-            middleware=[prompt_with_memories],  # builds the system prompt (SYSTEM + saved notes)
+            middleware=[*default_stack(settings=self.settings),prompt_with_memories],  # builds the system prompt (SYSTEM + saved notes)
             checkpointer=self.checkpointer,      # short-term memory (per thread)
             store=self.memory_store,                    # long-term memory (per user)
             context_schema=Context,

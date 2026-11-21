@@ -3,16 +3,15 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-#from app.services.chat import RAGService
 from app.services.agent import ClauseAgent
 
+
 EVALS_DIR = Path(__file__).resolve().parent
-GOLDEN_FILE = EVALS_DIR / "golden.jsonl"
+GOLDEN_FILE = EVALS_DIR / "golden_v2.jsonl"
 RESULTS_DIR = EVALS_DIR / "results"
 
 REFUSALS = ["don't know", "do not know", "not mention", "doesn't mention",
-            "doesn't cover", "does not cover", "no information",
-            "don't have", "do not have", "can only help", "can't share"]
+            "doesn't cover", "does not cover", "no information"]
 
 # Settings worth recording so runs can be compared
 CONFIG_KEYS = ["chat_provider", "chat_model", "chat_temperature",
@@ -45,7 +44,9 @@ def load_tests():
 def run_test(agent, t):
     """Ask one golden question and grade the answer."""
     start = time.perf_counter()
-    result = agent.ask(t["question"])
+
+    thread_id = input("Conversation name: ")
+    result = agent.ask(t["question"], thread_id)
     record = {
         "id": t["id"],
         "type": t["type"],
@@ -58,7 +59,7 @@ def run_test(agent, t):
 
     if t["type"] == "answerable":
         # What did the librarian actually hand the writer?
-        chunks = agent.vector_store.similarity_search(t["question"], k=agent.settings.top_k)
+        chunks = agent.store.similarity_search(t["question"], k=agent.settings.top_k)
         context = clean(" ".join(c.page_content for c in chunks))
 
         record["page_hit"] = any(s.page in t["expected_pages"] for s in result.sources)
@@ -138,3 +139,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# uv run python -m evals.run 
