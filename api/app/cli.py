@@ -1,40 +1,33 @@
-from app.services.chat import RAGService
+from app.services.agent import ClauseAgent
 
 
 def main() -> None:
-    rag_service = RAGService()
+    clause_agent = ClauseAgent()
     try:
+        # Ask once at startup. Same thread_id = same conversation memory.
+        user_id = input("User id: ").strip() or "guest"
+        session = input("Conversation name: ").strip() or "default"
+        thread_id = f"{user_id}:{session}"
+
         while True:
             query = input("You: ").strip()
             if not query:
                 continue
-            if query.lower() in {"exit", "quit"}:
+            if query.lower() in ("quit", "bye", "exit"):
                 break
 
-            try:
-                result = rag_service.ask(question=query)
-            except ValueError as e:
-                print(f"Error: {e}")
-                continue
-            except Exception as e:
-                print(f"Something went wrong: {e}")
-                continue
+            result = clause_agent.ask(question=query, thread_id=thread_id, user_id=user_id)
+            print(f"AI: {result['answer']}")
 
-            print(f"AI: {result.answer}")
+            if result["sources"]:
+                pages = sorted({s["page"] for s in result["sources"] if s.get("page") is not None})
+                print(f"    (pages: {pages})")
 
-            if result.sources:
-                print("Sources:")
-                for s in result.sources:
-                    print(f"  - {s.source} (page {s.page}, score {s.score})")
-            print()
     except (KeyboardInterrupt, EOFError):
-        print()
+        pass
     finally:
-        rag_service.close()
+        clause_agent.close()
 
 
 if __name__ == "__main__":
     main()
-
-# cd api
-# uv run python -m app.cli

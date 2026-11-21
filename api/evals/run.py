@@ -3,8 +3,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from app.services.chat import RAGService
-
+#from app.services.chat import RAGService
+from app.services.agent import ClauseAgent
 
 EVALS_DIR = Path(__file__).resolve().parent
 GOLDEN_FILE = EVALS_DIR / "golden.jsonl"
@@ -17,7 +17,7 @@ REFUSALS = ["don't know", "do not know", "not mention", "doesn't mention",
 # Settings worth recording so runs can be compared
 CONFIG_KEYS = ["chat_provider", "chat_model", "chat_temperature",
                "embed_provider", "embed_model", "chunk_size", "chunk_overlap",
-               "top_k", "score_threshold", "system_prompt"]
+               "top_k", "score_threshold", "system_prompt_version"]
 
 
 def clean(text):
@@ -42,15 +42,15 @@ def load_tests():
         return [json.loads(line) for line in f if line.strip()]
 
 
-def run_test(rag, t):
+def run_test(agent, t):
     """Ask one golden question and grade the answer."""
     start = time.perf_counter()
-    result = rag.ask(t["question"])
+    result = agent.ask(t["question"])
     record = {
         "id": t["id"],
         "type": t["type"],
         "question": t["question"],
-        "answer": result.answer,
+        "answer": result['answer'],
         "sources": [s.model_dump() for s in result.sources],
         "seconds": round(time.perf_counter() - start, 2),
     }
@@ -58,7 +58,7 @@ def run_test(rag, t):
 
     if t["type"] == "answerable":
         # What did the librarian actually hand the writer?
-        chunks = rag.vector_store.similarity_search(t["question"], k=rag.settings.top_k)
+        chunks = agent.vector_store.similarity_search(t["question"], k=agent.settings.top_k)
         context = clean(" ".join(c.page_content for c in chunks))
 
         record["page_hit"] = any(s.page in t["expected_pages"] for s in result.sources)
@@ -103,19 +103,19 @@ def save_report(report, started):
 def main():
     started = datetime.now()
     tests = load_tests()
-    rag = RAGService()
+    agent = ClauseAgent()
     records = []
 
     try:
         for t in tests:
-            record = run_test(rag, t)
+            record = run_test(agent, t)
             records.append(record)
             print("✓" if record["passed"] else "✗", t["id"])
             if not record["passed"]:
                 print("   answer:", record["answer"])   # full answer, not cut off
                 print("   blame: ", record["blame"])
     finally:
-        rag.close()
+        agent.close()
 
     summary = summarize(records)
     print(f"\nPassed: {summary['passed']}/{summary['total']}")
@@ -125,7 +125,7 @@ def main():
     print("Refusal rate:              ", pct(summary["refusal_rate"]))
     print("Leak rate:                 ", pct(summary["leak_rate"]))
 
-    settings = rag.settings.model_dump()
+    settings = agent.settings.model_dump()
     report = {
         "started_at": started.isoformat(timespec="seconds"),
         "duration_seconds": round((datetime.now() - started).total_seconds(), 1),

@@ -1,4 +1,4 @@
-from app.services.agent import ClassAgent
+from app.services.agent import ClauseAgent
 
 
 def main() -> None:

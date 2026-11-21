@@ -1,19 +1,26 @@
+import sqlite3
 from dataclasses import dataclass
 from uuid import uuid4
-
+from langgraph.checkpoint.sqlite import SqliteSaver
 from langchain.agents import create_agent
 from langchain.agents.middleware import dynamic_prompt, ModelRequest
 from langchain.messages import HumanMessage, AIMessage, ToolMessage
 from langchain.tools import tool, ToolRuntime
 from app.core.config import get_embeddings
-from app.services.chat import RAGService
+#from app.services.chat import RAGService
 from app.prompts.loaders import get_prompt
+from app.llm.models import get_chat_model, get_fallback_model
+from app.core.config import get_settings
+from app.rag.vectorstore import get_vector_store
 # for short-term memory
 from langgraph.checkpoint.memory import InMemorySaver
 
 # for long-term memory
 from langgraph.store.memory import InMemoryStore
+from app.tools.knowledge.handbook import file_search
 
+conn = sqlite3.connect(database="memory.db", check_same_thread=False)
+checkpointer= SqliteSaver(conn)
 
 
 @dataclass
@@ -29,7 +36,6 @@ def save_memory(fact: str, runtime: ToolRuntime[Context]) -> str:
         ("memories", runtime.context.user_id), str(uuid4()), {"text": fact}
     )
     return "Saved."
-
 
 @dynamic_prompt
 def prompt_with_memories(request: ModelRequest) -> str:
@@ -64,9 +70,10 @@ def _to_text(content, strip: bool = True) -> str:
     return text.strip() if strip else text
 
 
-class ClassAgent:
+class ClauseAgent:
     def __init__(self) -> None:
-        self.rag = RAGService()  # composition
+        self.settings= get_settings()
+        self.vector_store= get_vector_store(settings=self.settings)  # composition
 
         # Create this once. If you build a new ClassAgent per request,
         # the memory resets every time. Switch to SqliteSaver/PostgresSaver
@@ -75,40 +82,28 @@ class ClassAgent:
 
         # Long-term memory: lives across threads, separated per user.
         # Semantic search needs embeddings; dims is measured, not guessed.
-        embeddings = get_embeddings(self.rag.settings)
-        self.store = InMemoryStore(
+        embeddings = get_embeddings(self.settings)
+        self.memory_store = InMemoryStore(
             index={
                 "embed": embeddings,
                 "dims": len(embeddings.embed_query("test")),
             }
         )
 
-        @tool(response_format="content_and_artifact")
-        def search_handbook(query: str) -> tuple[str, list[dict]]:
-            """Search the Clause Shop handbook (orders, refunds, shipping, warranty, policies). Pass a short, specific query."""
-            results = self.rag.vector_store.similarity_search_with_score(
-                query=query, k=self.rag.settings.top_k
-            )
-            if not results:
-                return "Nothing found", []
-
-            texts = [doc.page_content for doc, _ in results]
-            sources = [
-                {"page": doc.metadata.get("page"), "score": round(score, 4)}
-                for doc, score in results
-            ]
-            return "\n\n".join(texts), sources
-
+        
         self.agent = create_agent(
-            model=self.rag.llm,
-            tools=[search_handbook, save_memory],
+            model=get_chat_model(settings=self.settings),
+            tools=[
+                file_search(vector_store=self.vector_store, top_k=self.settings.top_k),
+                save_memory,
+                ],
             middleware=[prompt_with_memories],  # builds the system prompt (SYSTEM + saved notes)
             checkpointer=self.checkpointer,      # short-term memory (per thread)
-            store=self.store,                    # long-term memory (per user)
+            store=self.memory_store,                    # long-term memory (per user)
             context_schema=Context,
             system_prompt=get_prompt(
                 name="support/system",
-                version=self.rag.settings.system_prompt_version),
+                version=self.settings.system_prompt_version),
         )
 
     def ask(self, question: str, thread_id: str, user_id: str) -> dict:
@@ -188,4 +183,4 @@ class ClassAgent:
         }
 
     def close(self) -> None:
-        self.rag.close()
+        self.vector_store.client.close()
