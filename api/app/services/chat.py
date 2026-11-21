@@ -48,11 +48,18 @@ class RAGService:
             sparse_vector_name="sparse",
         )
 
+        # Gemini models ignore temperature (and print a warning), so only pass it
+        # for other providers such as Ollama. Check that "google_genai" matches
+        # the value of chat_provider in your settings.
+        llm_kwargs = {}
+        if self.settings.chat_provider != "google_genai":
+            llm_kwargs["temperature"] = self.settings.chat_temperature
+
         self.llm = init_chat_model(
             model=self.settings.chat_model,
             model_provider=self.settings.chat_provider,
             api_key=self.settings.chat_api_key,
-            temperature=self.settings.chat_temperature,
+            **llm_kwargs,
         )
         self._last_call = 0.0
 
